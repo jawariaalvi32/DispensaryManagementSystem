@@ -1,0 +1,221 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Configuration;
+using System.Data.SqlClient;
+
+
+namespace dbms
+{
+    public partial class Bill : Form
+    {
+        SqlCommand cmd;
+        SqlConnection con;
+        SqlDataReader rd;
+        SqlDataAdapter sda;
+             
+        public Bill()
+        {
+            InitializeComponent();
+          
+            con = new SqlConnection("Data Source=DESKTOP-R2B06FS;Initial Catalog=Medical_Store_Management;Integrated Security=True");
+        }
+       
+        private void customer_BillBindingNavigatorSaveItem_Click(object sender, EventArgs e)
+        {
+            this.Validate();
+            this.customer_BillBindingSource.EndEdit();
+            this.tableAdapterManager.UpdateAll(this.medical_Store_ManagementDataSet);
+
+        }
+
+        private void Bill_Load(object sender, EventArgs e)
+        {
+            // TODO: This line of code loads data into the 'medical_Store_ManagementDataSet.Customer' table. You can move, or remove it, as needed.
+            this.customerTableAdapter.Fill(this.medical_Store_ManagementDataSet.Customer);
+            // TODO: This line of code loads data into the 'medical_Store_ManagementDataSet.Customer_Bill' table. You can move, or remove it, as needed.
+            //this.customer_BillTableAdapter.Fill(this.medical_Store_ManagementDataSet.Customer_Bill);
+            // Disp_Data();\
+            Connection c = new Connection();
+            c.Disp_IN_DGV("Select * from Customer_Bill");
+
+        }
+
+        public void Disp_Data()
+        {
+            sda = new SqlDataAdapter(@"Select * from Customer_Bill", con);
+            DataTable dt = new DataTable();
+            sda.Fill(dt);
+            customer_BillDataGridView.DataSource = dt;
+        }
+        private void btn_Bil_Ins_Click(object sender, EventArgs e)
+        {
+            Decimal Quantity = 1;
+            string sql1 = "Select * from Store_Stock where Medicine_id=" + med_IDTextBox.Text;
+            cmd = new SqlCommand(sql1, con);
+
+            try
+            {
+                con.Open();
+                rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    Quantity = Convert.ToDecimal(rd.GetValue(3));
+                    MessageBox.Show("L");
+                }
+                con.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            Quantity = Quantity - Convert.ToDecimal(quantityTextBox.Text);
+            string sql2 = "Update Store_Stock set Quantity=" + Quantity + " where Medicine_id=" + med_IDTextBox.Text + " ";
+            cmd = new SqlCommand(sql2, con);
+
+            try
+            {
+                con.Open();
+                cmd.ExecuteNonQuery();
+                con.Close();
+
+                // MessageBox.Show("Record updated successfully");
+
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show(ex.Message);
+            }
+            string sql = "Insert into Customer_Bill values("+cus_IDTextBox.Text+","+med_IDTextBox.Text+","+quantityTextBox.Text+","+total_AmountTextBox.Text+","+paid_amountTextBox.Text+","+return_AmountTextBox.Text+")";
+            cmd = new SqlCommand(sql, con);
+
+            try
+            {
+                con.Open();
+                cmd.ExecuteNonQuery();
+                Disp_Data();
+                con.Close();
+                MessageBox.Show("Record Inserted successfully");
+            }
+
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+            sda = new SqlDataAdapter(@"Select * from Customer_Bill", con);
+            DataTable dt = new DataTable();
+            sda.Fill(dt);
+            customer_BillDataGridView.DataSource = dt;
+
+        }
+
+        private void quantityTextBox_TextChanged(object sender, EventArgs e)
+        {
+            Decimal Med_Price = 1;
+            string sql = "Select * From Store_Stock Where Medicine_id='" + med_IDTextBox.Text + "'";
+            cmd = new SqlCommand(sql, con);
+            try
+            {
+                con.Open();
+                rd = cmd.ExecuteReader();
+              //  MessageBox.Show(rd.HasRows.ToString());
+                while (rd.Read())
+                {
+                    Med_Price = Convert.ToDecimal((rd.GetValue(6)));
+                   // MessageBox.Show(Med_Price.ToString());
+                   
+                }
+
+                con.Close();
+                total_AmountTextBox.Text = (Convert.ToDecimal(quantityTextBox.Text) * (Med_Price)).ToString();
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }       
+           
+        }
+
+        private void btn_bil_Upd_Click(object sender, EventArgs e)
+        {
+           
+        }
+
+        private void btn_Grand_Total_Click(object sender, EventArgs e)
+        {
+            int Total = 1;
+            string sql = "Select sum (Total_Amount)from Customer_Bill where Cus_ID ="+cus_IDTextBox.Text;
+            cmd = new SqlCommand(sql, con);
+
+            try
+            {
+                con.Open();
+                rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    Total = Convert.ToInt32(rd.GetValue(0));
+                    MessageBox.Show("L");
+                    textBox_Grand_Tot.Text = Total.ToString();
+                }
+                con.Close();
+             
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void btn_Report_Click(object sender, EventArgs e)
+        {
+            //String Sql = "Select * from Customer_Bill";
+            //sda = new SqlDataAdapter(Sql, con);
+            //DataSet dst = new DataSet();
+            //sda.Fill(dst);
+            //cry.Load(@"C:\Users\USER\Documents\Visual Studio 2015\Projects\dbms\dbms\CrystalReport1.rpt");
+            //cry.SetDataSource(dst);
+            //crystalReportViewer1.ReportSource = cry;
+        }
+
+        private void customer_BillBindingNavigator_RefreshItems(object sender, EventArgs e)
+        {
+
+        }
+
+        private void cus_IDLabel1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btn_Bill_Reset_Click(object sender, EventArgs e)
+        {
+            cus_IDTextBox.Text = "";
+            med_IDTextBox.Text = "";
+            quantityTextBox.Text = "";
+            total_AmountTextBox.Text = "";
+            textBox_Grand_Tot.Text= "";
+            paid_amountTextBox.Text = "";
+            return_AmountTextBox.Text = "";
+            string q = "Select * from Customer_Bill";
+            Connection c = new Connection();
+            c.Disp_IN_DGV(q);
+        }
+
+        private void btn_Close_Click(object sender, EventArgs e)
+        {
+            Select se = new Select();
+            this.Hide();
+            
+        }
+    }
+}
+
